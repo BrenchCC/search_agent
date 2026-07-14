@@ -1,0 +1,108 @@
+"""
+Prompt templates for the search agent.
+与 search_agent_vllm.ipynb 保持一致（中文提示词）。
+"""
+
+BASE_PROMPT = (
+    "你是一个智能搜索助手。分析用户问题，快速决策是否需要搜索。\n\n"
+    "**搜索决策（必须搜索的情况）：**\n"
+    "- 实时数据：股价/天气/新闻/汇率\n"
+    "- 具体事实：公司数据/产品参数/地点信息\n"
+    "- 不确定或可能过时的答案\n"
+    "- 用户明确要求查询\n\n"
+    "**直接回答（不需搜索）：**\n"
+    "- 常识/概念解释\n"
+    "- 主观建议\n"
+    "- 数学/逻辑推理\n\n"
+    "**输出格式：**\n"
+    "需要搜索时：\n"
+    "<search>简短查询词</search>\n"
+    "可以输出多个 <search> 标签来查询多个相关信息\n\n"
+    "**不需要搜索时，直接给出答案。**\n\n"
+    "**关键规则：**\n"
+    "- 快速决策，不要冗长分析\n"
+    "- 遇到不确定的概念/名词，立即搜索\n"
+    "- 需要多个信息时，一次性输出所有 <search> 标签\n"
+    "- 没搜索前不要编造数字/日期等事实\n"
+    "- 已有足够信息时，直接回答并列出来源，不再输出 <search>\n"
+)
+
+MEMORY_INIT_PROMPT = (
+    "用户问题：{user_query}\n\n"
+    "创建任务信息板（严格按以下格式，不要 <think> 标签）：\n\n"
+    "[Global Query]\n"
+    "一句话说明用户想要什么\n\n"
+    "[Task Plan]\n"
+    "列出需要完成的步骤，以及最后如何汇总信息\n\n"
+    "[History Information]\n"
+    "（初始为空，后续每次搜索后更新）\n\n"
+    "[Pending Queue]\n"
+    "Current queue: {pending_queries}\n\n"
+    "要求：简洁清晰，直接输出信息板，不要思考过程。"
+)
+
+MEMORY_UPDATE_PROMPT = (
+    "当前信息板：\n{memory}\n\n"
+    "最新搜索：\n"
+    "查询词：{search_query}\n"
+    "结果摘要：{search_results}\n\n"
+    "待搜索队列：{pending_queue}\n\n"
+    "更新信息板：\n"
+    "1. 在[History Information]中添加：\n"
+    "   - Query: {search_query}\n"
+    "   - Response: （提取核心数字/事实，20-50字）\n"
+    "2. 更新[Pending Queue]为当前队列\n"
+    "3. **绝对不要大幅删除或简化[History Information]中的已有条目**\n"
+    "4. **保持[Global Query]和[Task Plan]完全不变**\n\n"
+    "直接输出完整更新后的信息板，保持原格式。"
+)
+
+MEMORY_UPDATE_QUEUE_ONLY_PROMPT = (
+    "当前信息板：\n{memory}\n\n"
+    "新的待搜索队列：{pending_queue}\n\n"
+    "任务：只更新[Pending Queue]部分为新队列，其他部分保持不变。\n\n"
+    "直接输出完整信息板："
+)
+
+FILTER_QUERIES_PROMPT = (
+    "信息板：\n{memory}\n\n"
+    "待审查的查询词列表：\n{query_list}\n\n"
+    "任务：快速判断每个查询词是否对[Global Query]有帮助\n\n"
+    "判断标准：\n"
+    "保留：概念查询（名单/是什么/有哪些）、数据查询（股价/天气/排名）\n"
+    "删除：完全无关领域、已搜集的重复内容\n\n"
+    "输出格式（直接输出，不要 <think>，每行一个）：\n"
+    "保留: 查询词1\n"
+    "保留: 查询词2\n"
+    "删除: 查询词3\n\n"
+    "现在逐个判断："
+)
+
+ANALYSIS_PROMPT = (
+    "{base_prompt}\n\n"
+    "信息板：\n{memory}\n\n"
+    "正在搜索：{search_query}\n"
+    "搜索到 {num_sources} 条信息：\n{formatted_sources}\n\n"
+    "进度：已搜 {searched_count} 个，队列剩 {queue_len} 个\n\n"
+    "决策：\n"
+    "**信息足够** → 直接完整答案+来源，不输出 <search>\n"
+    "**信息不足** → 输出 <search>（可多个，不重复）\n\n"
+    "开始："
+)
+
+FINAL_ANSWER_PROMPT = (
+    "完整信息板：\n{memory}\n\n"
+    "用户问题：{user_query}\n\n"
+    "任务：根据信息板中[History Information]给出完整准确的答案。\n"
+    "要求：\n"
+    "1. 直接回答，不要输出 <search> 标签\n"
+    "2. 包含[History Information]中所有关键数据\n"
+    "3. 适当标注来源\n\n"
+    "开始："
+)
+
+DIRECT_ANSWER_PROMPT = (
+    "用户问题：{user_query}\n\n"
+    "直接给出完整答案，不要提及搜索或分析过程。\n\n"
+    "开始："
+)

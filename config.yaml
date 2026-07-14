@@ -1,0 +1,55 @@
+model:
+  local_model_path: "/root/autodl-tmp/models/qwen-8b-instruct"
+  gpu_memory_utilization: 0.85
+  max_model_len: 16384
+  temperature: 0.7
+  top_p: 0.8
+
+vllm_server:
+  host: "127.0.0.1"
+  port: 6001
+
+search:
+  jina_api_key: "jina_xxxxxxxxxxxxxxxxxxxx"
+  jina_endpoint: "https://s.jina.ai"
+  proxies:
+    http: "http://127.0.0.1:7890"
+    https: "http://127.0.0.1:7890"
+  use_proxy: true
+
+limits:
+  max_sources_per_search: 5
+  max_source_desc_len: 500
+  max_formatted_sources_len: 4500
+  max_raw_display_len: 4000
+  max_final_tokens: 8192
+  max_memory_tokens: 1500
+  max_new_tokens_default: 1536
+  max_rounds: 15
+
+eval:
+  benchmark_path: "/root/autodl-tmp/benchmark/data/main-00000-of-00001.jsonl"
+  hotpot_benchmark_path: "/root/autodl-tmp/benchmark/hotpotqa/hotpot_dev_distractor_v1.jsonl"
+  output_dir: "tests"
+  batch_size: 1
+
+webdancer:
+  vllm_port: 6001                          # port where WebDancer vLLM is running
+  serper_api_key: ""                        # https://serper.dev — for Google search
+  max_rounds: 50                            # max LLM calls per question
+  max_new_tokens: 10000                     # per LLM call
+  max_context_chars: 400000                 # ~100K tokens; triggers forced-answer prompt
+  visit_max_chars: 15000                    # truncate Jina page content to this length
+  temperature: 0.6
+  presence_penalty: 1.1
+
+judge:
+  model_path: "/root/autodl-tmp/models/qwen-32b"  # path passed to commands/start_judge_vllm.sh
+  api_url: "http://127.0.0.1:6002/v1"   # local judge vLLM (start with: bash commands/start_judge_vllm.sh -d)
+  api_key: "EMPTY"                       # local vLLM does not need a real key
+  model: "qwen-72b-instruct"             # model name as returned by /v1/models
+  temperature: 0.0
+  timeout: 60
+  max_retries: 5
+  gpu_memory_utilization: 0.90
+  max_model_len: 16384
